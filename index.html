@@ -451,7 +451,6 @@ footer .links{margin-top:14px;font-size:14px;color:var(--sand-deep)}
           <div class="opt"><input type="radio" name="sleep" id="s1" value="yes"><label for="s1"><b>כן</b><span class="sub">בשק שינה, במתחם</span></label></div>
           <div class="opt"><input type="radio" name="sleep" id="s2" value="no"><label for="s2"><b>לא, רק לסעודות</b></label></div>
         </div><p class="err">בחרו אם לנים או לא</p></div>
-        <p class="err" id="err-step3">כדי שנדע למה לצפות, בחרו לפחות סעודה אחת או לינה</p>
         <label class="f" for="notes">משהו שתרצו לספר לנו? <small>(אפשר גם רגישויות מזון)</small></label>
         <textarea id="notes"></textarea>
         <div class="nav-row"><button type="button" class="btn sec-btn" onclick="goStep(2)">→ חזרה</button><button type="button" class="btn" onclick="goStep(4)">ממשיכים ←</button></div>
@@ -484,10 +483,10 @@ footer .links{margin-top:14px;font-size:14px;color:var(--sand-deep)}
           <h3>משתתפים בעלויות</h3>
           <p class="pay-sub">50 ₪ לארוחה — השתתפות סמלית</p>
         </div>
-        <div class="amount-line" id="amountLine" aria-live="polite">הסכום המוצע לפי בחירתך: <b id="suggestedTxt"></b></div>
+        <div class="amount-line" id="amountLine" aria-live="polite">הסכום המוצע לפי הסעודות שבחרת: <b id="suggestedTxt"></b></div>
         <div id="f-pay"><div class="opt-grid" role="radiogroup" aria-label="השתתפות בעלויות">
           <div class="opt"><input type="radio" name="pay" id="p1" value="suggested"><label for="p1"><b id="p1label">הסכום המוצע — 100 ₪</b></label></div>
-          <div class="opt"><input type="radio" name="pay" id="p2" value="other"><label for="p2"><b>סכום אחר</b><span class="sub">בוחר/ת סכום משלי</span></label></div>
+          <div class="opt"><input type="radio" name="pay" id="p2" value="other"><label for="p2"><b>סכום לפי בחירתי</b><span class="sub">בוחר/ת סכום משלי</span></label></div>
           <div class="opt"><input type="radio" name="pay" id="p3" value="extra"><label for="p3"><b>אשמח לתרום גם עבור אורח אחר</b><span class="sub">שלא יכול לשלם</span></label></div>
           <div class="opt"><input type="radio" name="pay" id="p4" value="none"><label for="p4"><b>כרגע לא יכול/ה להשתתף</b><span class="sub">ואשמח להצטרף</span></label></div>
         </div><p class="err">בחרו את אפשרות ההשתתפות המתאימה לכם</p></div>
@@ -728,9 +727,7 @@ function validate(step){
   if (step === 3){
     var sl = !!document.querySelector('input[name=sleep]:checked');
     setInvalid('f-sleep', !sl);
-    var any = mealsCount() > 0 || document.getElementById('s1').checked;
-    document.getElementById('err-step3').style.display = (sl && !any) ? 'block' : 'none';
-    ok = sl && any;
+    ok = sl;
   }
   if (step === 4){
     var py = !!document.querySelector('input[name=pay]:checked');
@@ -750,10 +747,12 @@ function mealsCount(){
   return (document.getElementById('mealFri').checked ? 1 : 0) + (document.getElementById('mealSat').checked ? 1 : 0);
 }
 function updateSuggested(){
-  var n = mealsCount(), amt = Math.max(n, 1) * 50;
-  document.getElementById('suggestedTxt').textContent = n > 0
-    ? amt + ' ₪ (' + n + (n === 1 ? ' ארוחה' : ' ארוחות') + ' × 50)'
-    : amt + ' ₪ (השתתפות סמלית בלינה)';
+  var n = mealsCount(), amt = n * 50, has = n > 0;
+  /* הסכום המוצע נפתח רק כשנבחרה סעודה; ההשתתפות היא בסעודות, אין סכום ללינה */
+  document.getElementById('amountLine').style.display = has ? 'block' : 'none';
+  document.getElementById('p1').closest('.opt').style.display = has ? 'block' : 'none';
+  if (!has && document.getElementById('p1').checked) document.getElementById('p1').checked = false;
+  document.getElementById('suggestedTxt').textContent = amt + ' ₪ (' + n + (n === 1 ? ' ארוחה' : ' ארוחות') + ' × 50)';
   document.getElementById('p1label').textContent = 'הסכום המוצע — ' + amt + ' ₪';
 }
 document.querySelectorAll('input[name=pay]').forEach(function(r){
@@ -773,7 +772,7 @@ document.getElementById('regForm').addEventListener('submit', function(ev){
 
   var sh = selectedShabbat();
   var pay = (document.querySelector('input[name=pay]:checked')||{}).value || 'none';
-  var n = Math.max(mealsCount(), 1);
+  var n = mealsCount();
   var amount = 0;
   if (pay === 'suggested') amount = n * 50;
   if (pay === 'other') amount = Number(document.getElementById('otherAmount').value) || 0;
