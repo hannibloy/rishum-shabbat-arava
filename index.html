@@ -441,16 +441,17 @@ footer .links{margin-top:14px;font-size:14px;color:var(--sand-deep)}
       <!-- STEP 3 -->
       <fieldset class="step" data-step="3" hidden>
         <legend>מה מתאים לכם?</legend>
-        <div id="f-meals"><label class="f">באילו סעודות תצטרפו? <small>אפשר לסמן את שתיהן</small></label>
+        <div id="f-meals"><label class="f">באילו סעודות תצטרפו? <small>אפשר לסמן אחת, שתיהן, או אף אחת אם מגיעים ללינה בלבד</small></label>
           <div class="opt-grid two">
             <div class="opt"><input type="checkbox" id="mealFri"><label for="mealFri"><b>סעודת ליל שבת</b></label></div>
             <div class="opt"><input type="checkbox" id="mealSat"><label for="mealSat"><b>סעודת יום שבת</b></label></div>
-          </div><p class="err">בחרו לפחות סעודה אחת</p></div>
-        <label class="f">לנים אצלנו?</label>
+          </div></div>
+        <div id="f-sleep"><label class="f">לנים אצלנו?</label>
         <div class="opt-grid two">
           <div class="opt"><input type="radio" name="sleep" id="s1" value="yes"><label for="s1"><b>כן</b><span class="sub">בשק שינה, במתחם</span></label></div>
-          <div class="opt"><input type="radio" name="sleep" id="s2" value="no" checked><label for="s2"><b>לא, רק לסעודות</b></label></div>
-        </div>
+          <div class="opt"><input type="radio" name="sleep" id="s2" value="no"><label for="s2"><b>לא, רק לסעודות</b></label></div>
+        </div><p class="err">בחרו אם לנים או לא</p></div>
+        <p class="err" id="err-step3">כדי שנדע למה לצפות, בחרו לפחות סעודה אחת או לינה</p>
         <label class="f" for="notes">משהו שתרצו לספר לנו? <small>(אפשר גם רגישויות מזון)</small></label>
         <textarea id="notes"></textarea>
         <div class="nav-row"><button type="button" class="btn sec-btn" onclick="goStep(2)">→ חזרה</button><button type="button" class="btn" onclick="goStep(4)">ממשיכים ←</button></div>
@@ -483,13 +484,13 @@ footer .links{margin-top:14px;font-size:14px;color:var(--sand-deep)}
           <h3>משתתפים בעלויות</h3>
           <p class="pay-sub">50 ₪ לארוחה — השתתפות סמלית</p>
         </div>
-        <div class="amount-line" id="amountLine" aria-live="polite">הסכום המוצע לפי הסעודות שבחרת: <b id="suggestedTxt">100 ₪ (2 ארוחות × 50)</b></div>
-        <div class="opt-grid" role="radiogroup" aria-label="השתתפות בעלויות">
-          <div class="opt"><input type="radio" name="pay" id="p1" value="suggested" checked><label for="p1"><b id="p1label">הסכום המוצע — 100 ₪</b></label></div>
+        <div class="amount-line" id="amountLine" aria-live="polite">הסכום המוצע לפי בחירתך: <b id="suggestedTxt"></b></div>
+        <div id="f-pay"><div class="opt-grid" role="radiogroup" aria-label="השתתפות בעלויות">
+          <div class="opt"><input type="radio" name="pay" id="p1" value="suggested"><label for="p1"><b id="p1label">הסכום המוצע — 100 ₪</b></label></div>
           <div class="opt"><input type="radio" name="pay" id="p2" value="other"><label for="p2"><b>סכום אחר</b><span class="sub">בוחר/ת סכום משלי</span></label></div>
           <div class="opt"><input type="radio" name="pay" id="p3" value="extra"><label for="p3"><b>אשמח לתרום גם עבור אורח אחר</b><span class="sub">שלא יכול לשלם</span></label></div>
           <div class="opt"><input type="radio" name="pay" id="p4" value="none"><label for="p4"><b>כרגע לא יכול/ה להשתתף</b><span class="sub">ואשמח להצטרף</span></label></div>
-        </div>
+        </div><p class="err">בחרו את אפשרות ההשתתפות המתאימה לכם</p></div>
         <div id="otherAmountWrap"><label class="f" for="otherAmount">הסכום שלי (₪)</label><input type="number" id="otherAmount" min="1" inputmode="numeric"></div>
         <div id="extraAmountWrap"><label class="f" for="extraAmount">הסכום הכולל (₪) <small>למשל: 100 = ההשתתפות שלי + ארוחה לאורח נוסף</small></label><input type="number" id="extraAmount" min="1" inputmode="numeric"></div>
         <p class="pay-note">ההשתתפות הינה סמלית 💛 כל השתתפות מזכה בקבלה מוכרת למס (סעיף 46א׳)</p>
@@ -725,8 +726,15 @@ function validate(step){
     ok = a && b && pOk && g;
   }
   if (step === 3){
-    var m = document.getElementById('mealFri').checked || document.getElementById('mealSat').checked;
-    setInvalid('f-meals', !m); ok = m;
+    var sl = !!document.querySelector('input[name=sleep]:checked');
+    setInvalid('f-sleep', !sl);
+    var any = mealsCount() > 0 || document.getElementById('s1').checked;
+    document.getElementById('err-step3').style.display = (sl && !any) ? 'block' : 'none';
+    ok = sl && any;
+  }
+  if (step === 4){
+    var py = !!document.querySelector('input[name=pay]:checked');
+    setInvalid('f-pay', !py); ok = py;
   }
   return ok;
 }
@@ -742,8 +750,10 @@ function mealsCount(){
   return (document.getElementById('mealFri').checked ? 1 : 0) + (document.getElementById('mealSat').checked ? 1 : 0);
 }
 function updateSuggested(){
-  var n = Math.max(mealsCount(), 1), amt = n * 50;
-  document.getElementById('suggestedTxt').textContent = amt + ' ₪ (' + n + (n === 1 ? ' ארוחה' : ' ארוחות') + ' × 50)';
+  var n = mealsCount(), amt = Math.max(n, 1) * 50;
+  document.getElementById('suggestedTxt').textContent = n > 0
+    ? amt + ' ₪ (' + n + (n === 1 ? ' ארוחה' : ' ארוחות') + ' × 50)'
+    : amt + ' ₪ (השתתפות סמלית בלינה)';
   document.getElementById('p1label').textContent = 'הסכום המוצע — ' + amt + ' ₪';
 }
 document.querySelectorAll('input[name=pay]').forEach(function(r){
@@ -756,13 +766,13 @@ document.querySelectorAll('input[name=pay]').forEach(function(r){
 /* ================= SUBMIT ================= */
 document.getElementById('regForm').addEventListener('submit', function(ev){
   ev.preventDefault();
-  for (var st = 1; st <= 3; st++){ if (!validate(st)){ cur = st; goStep(st); return; } }
+  for (var st = 1; st <= 4; st++){ if (!validate(st)){ cur = st; goStep(st); return; } }
   var conf = document.getElementById('confirm').checked;
   document.getElementById('err-confirm').style.display = conf ? 'none' : 'block';
   if (!conf) return;
 
   var sh = selectedShabbat();
-  var pay = document.querySelector('input[name=pay]:checked').value;
+  var pay = (document.querySelector('input[name=pay]:checked')||{}).value || 'none';
   var n = Math.max(mealsCount(), 1);
   var amount = 0;
   if (pay === 'suggested') amount = n * 50;
