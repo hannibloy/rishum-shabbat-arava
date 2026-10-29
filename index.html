@@ -771,7 +771,7 @@ function mealsCount(){
 }
 function updateSuggested(){
   var n = Math.max(mealsCount(), 1), amt = n * 50;
-  document.getElementById('suggestedTxt').textContent = amt + ' ₪';
+  document.getElementById('suggestedTxt').textContent = amt + ' ₪' + (n >= 2 ? ' (50 ₪ לכל סעודה)' : '');
   document.getElementById('p1label').textContent = 'הסכום המוצע — ' + amt + ' ₪';
 }
 document.querySelectorAll('input[name=pay]').forEach(function(r){
