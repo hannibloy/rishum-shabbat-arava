@@ -1,0 +1,195 @@
+/**
+ * בית חב"ד הערבה — קליטת הרשמות לשבת
+ * גרסה 2.2 — שורה אחת לכל מטייל, שמתעדכנת לאורך הדרך. ללא מיילים.
+ *
+ * איך זה עובד עכשיו:
+ *  • סוף שלב 2 (שם + טלפון): נוצרת שורה בסטטוס "טרם הושלם"
+ *  • לחיצה על "שמרו לי מקום": אותה שורה מתעדכנת לסטטוס "נרשם/ה" עם כל הפרטים
+ *  • בחירת השתתפות: אותה שורה מתעדכנת ("בחר/ה להשתתף" + סכום, או "ללא")
+ *  האתר מזהה כל מטייל במזהה ייחודי (עמודה "מזהה"), כך שאין כפילויות גם אם
+ *  הטלפון שולח את אותה הרשמה פעמיים.
+ *
+ * עדכון הקוד:
+ *  א. בגיליון: תוספים (Extensions) ← Apps Script
+ *  ב. מחקי את כל מה שכתוב שם והדביקי את כל הקובץ הזה
+ *  ג. שמירה (סמל הדיסקט)
+ *  ד. פריסה (Deploy) ← ניהול פריסות (Manage deployments) ← ✏️ עיפרון
+ *     ← גרסה: "גרסה חדשה (New version)" ← פריסה (Deploy)
+ *
+ *  ⚠️ לא ליצור "פריסה חדשה" (New deployment) — רק לעדכן את הקיימת דרך העיפרון.
+ *     כך הכתובת נשארת זהה והאתר ממשיך לעבוד בלי שינוי.
+ */
+
+var SHEET   = 'הרשמות';
+var HEADERS = ['נרשם בתאריך', 'שבת פרשת', 'תאריך השבת', 'שם פרטי', 'שם משפחה',
+               'טלפון', 'בן/בת', 'סוג אורח', 'ליל שבת', 'יום שבת', 'לינה',
+               'הערות', 'השתתפות (₪)', 'סטטוס', 'מזהה', 'עודכן'];
+var COL_ID  = 15;   // עמודת "מזהה" (O)
+var PARTIAL = 'טרם הושלם';
+
+
+/* ===== קליטת הרשמה מהאתר ===== */
+function doPost(e) {
+  var lock = LockService.getScriptLock();
+  lock.tryLock(15000);
+
+  try {
+    var d  = JSON.parse(e.postData.contents);
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sh = ss.getSheetByName(SHEET) || ss.insertSheet(SHEET);
+    ensureHeaders(sh);
+
+    var stage  = d.stage || 'full';
+    var amount = Number(d.amount) || 0;
+    var status = stage === 'partial' ? PARTIAL
+               : stage === 'payment' ? (amount > 0 ? 'בחר/ה להשתתף' : 'ללא')
+               : 'נרשם/ה';
+
+    var regId = d.regId || d.clientId || '';
+    var row = findRowById(sh, regId);
+    var values = [
+      null,                                  // נרשם בתאריך — נקבע פעם אחת
+      d.parasha    || '',
+      d.shabbatDate|| '',
+      d.firstName  || '',
+      d.lastName   || '',
+      "'" + (d.phone || ''),                 // הגרש שומר על האפס בהתחלה
+      d.gender     || '',
+      d.guestType  || '',
+      d.mealFri ? '✓' : '',
+      d.mealSat ? '✓' : '',
+      stage === 'partial' ? '' : (d.sleeping === 'yes' ? 'לן/ה' : 'רק סעודות'),
+      d.notes      || '',
+      amount,
+      status,
+      regId,
+      new Date()
+    ];
+
+    if (row) {
+      // שורה קיימת: לא דורסים שלב מתקדם בשלב מוקדם שהגיע באיחור
+      var curStatus = sh.getRange(row, 14).getValue();
+      if (stage === 'partial' && curStatus !== PARTIAL) return out({ ok: true, kept: true });
+      if (stage === 'full' && (curStatus === 'בחר/ה להשתתף' || curStatus === 'ללא')) {
+        values[12] = sh.getRange(row, 13).getValue();
+        values[13] = curStatus;
+      }
+      values[0] = sh.getRange(row, 1).getValue() || new Date();
+      sh.getRange(row, 1, 1, values.length).setValues([values]);
+    } else {
+      values[0] = new Date();
+      sh.appendRow(values);
+    }
+
+    try { updateSummary(ss); } catch (err) {}   // דוח המטבח לעולם לא יפיל הרשמה
+    return out({ ok: true });
+
+  } catch (err) {
+    return out({ ok: false, error: String(err) });
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+
+function ensureHeaders(sh) {
+  if (sh.getLastRow() === 0) {
+    sh.appendRow(HEADERS);
+    sh.setFrozenRows(1);
+    sh.getRange(1, 1, 1, HEADERS.length).setFontWeight('bold').setBackground('#F5EDDF');
+    sh.setRightToLeft(true);
+    return;
+  }
+  // גיליון קיים מגרסה קודמת: משלימים את העמודות החדשות
+  var have = sh.getLastColumn();
+  if (have < HEADERS.length) {
+    sh.getRange(1, have + 1, 1, HEADERS.length - have)
+      .setValues([HEADERS.slice(have)])
+      .setFontWeight('bold').setBackground('#F5EDDF');
+  }
+}
+
+function findRowById(sh, id) {
+  if (!id || sh.getLastRow() < 2) return 0;
+  var ids = sh.getRange(2, COL_ID, sh.getLastRow() - 1, 1).getValues();
+  for (var i = ids.length - 1; i >= 0; i--) {
+    if (String(ids[i][0]) === String(id)) return i + 2;
+  }
+  return 0;
+}
+
+
+/* ===== לשונית "השבת הקרובה" — דוח המטבח האוטומטי (ללא "טרם הושלם") ===== */
+function updateSummary(ss) {
+  var sh  = ss.getSheetByName(SHEET);
+  var sum = ss.getSheetByName('השבת הקרובה') || ss.insertSheet('השבת הקרובה');
+
+  sum.clear();
+  sum.setRightToLeft(true);
+
+  var data = sh.getDataRange().getValues();
+  if (data.length < 2) return;
+
+  var last = '';
+  for (var k = data.length - 1; k >= 1; k--) {
+    if (data[k][13] !== PARTIAL) { last = data[k][1]; break; }
+  }
+  if (!last) return;
+
+  var total = 0, boys = 0, girls = 0, sleep = 0,
+      fri = 0, sat = 0, paid = 0, sum_amount = 0, partial = 0;
+
+  for (var i = 1; i < data.length; i++) {
+    if (data[i][1] !== last) continue;
+    if (data[i][13] === PARTIAL) { partial++; continue; }
+    total++;
+    if (data[i][6] === 'בן')  boys++;
+    if (data[i][6] === 'בת')  girls++;
+    if (data[i][10] === 'לן/ה') sleep++;
+    if (data[i][8] === '✓') fri++;
+    if (data[i][9] === '✓') sat++;
+    if (Number(data[i][12]) > 0) { paid++; sum_amount += Number(data[i][12]); }
+  }
+
+  var rows = [
+    ['שבת פרשת ' + last, ''],
+    ['', ''],
+    ['סה"כ נרשמו',            total],
+    ['בנים / בנות',           boys + ' / ' + girls],
+    ['לנים במתחם',            sleep],
+    ['', ''],
+    ['מנות — סעודת ליל שבת',  fri],
+    ['מנות — סעודת יום שבת',  sat],
+    ['', ''],
+    ['בחרו להשתתף בעלויות',   paid + ' מתוך ' + total],
+    ['סה"כ השתתפות',          sum_amount + ' ₪'],
+    ['', ''],
+    ['התחילו ולא סיימו (לוואטסאפ)', partial]
+  ];
+
+  sum.getRange(1, 1, rows.length, 2).setValues(rows);
+  sum.getRange(1, 1).setFontWeight('bold').setFontSize(15);
+  sum.getRange(2, 1, rows.length - 1, 1).setFontWeight('bold');
+  sum.setColumnWidth(1, 230);
+  sum.setColumnWidth(2, 130);
+}
+
+
+function out(o) {
+  return ContentService
+    .createTextOutput(JSON.stringify(o))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+
+/* ===== בדיקה ידנית: מדמה מטייל שעובר את כל השלבים — אמורה להיווצר שורה אחת ===== */
+function testRegistration() {
+  var id = 'test-' + Date.now();
+  var base = { regId: id, clientId: id, parasha: 'בדיקה', shabbatDate: '2026-11-07',
+    firstName: 'ישראל', lastName: 'ישראלי', phone: '0501234567', gender: 'בן',
+    guestType: 'מטייל/אורח', mealFri: true, mealSat: true, sleeping: 'yes', notes: 'הרשמת ניסיון', amount: 0 };
+  ['partial', 'full', 'payment'].forEach(function (stage) {
+    var d = JSON.parse(JSON.stringify(base)); d.stage = stage; if (stage === 'payment') d.amount = 100;
+    Logger.log(stage + ': ' + doPost({ postData: { contents: JSON.stringify(d) } }).getContent());
+  });
+}
