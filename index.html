@@ -239,8 +239,8 @@ input:focus,textarea:focus{border-bottom-color:var(--terra);outline:none;backgro
 @media(hover:hover){.btn.sec-btn:hover{background:#D6E5EB;transform:translateY(-2px);filter:none;box-shadow:inset 0 0 0 1.5px rgba(116,151,164,.55),0 8px 20px rgba(116,151,164,.22)}}
 .btn.sec-btn:active{background:#CCDEE5;transform:translateY(2px) scale(.97);filter:none;
   box-shadow:inset 0 0 0 1.5px rgba(116,151,164,.55),inset 0 3px 8px rgba(60,80,90,.14)}
-.after-btn{text-align:center;font-size:13.5px;color:var(--muted);margin:10px 0 0;line-height:1.5}
 button.pay-cta{border:0;width:100%;font:inherit;cursor:pointer;text-align:center;color:#fff}
+.pay-hint{text-align:center;font-size:13px;color:var(--muted);margin:8px 0 0;line-height:1.5}
 .check-row{display:flex;gap:10px;align-items:flex-start;margin-top:16px}
 .check-row input{width:22px;height:22px;margin-top:4px;accent-color:var(--terra);flex:none}
 .check-row label{font-size:15.5px}
@@ -483,15 +483,12 @@ footer .links{margin-top:14px;font-size:14px;color:var(--sand-deep)}
         </div><p class="err">בחרו אם לנים או לא</p></div>
         <label class="f" for="notes">משהו שתרצו לספר לנו? <small>(אפשר גם רגישויות מזון)</small></label>
         <textarea id="notes"></textarea>
-        <div class="nav-row"><button type="button" class="btn sec-btn" onclick="goStep(2)">→ חזרה</button><button type="submit" class="btn" id="submitBtn">שמרו לי מקום 💛</button></div>
-        <p class="after-btn">אנחנו מכינים לפי מספר הנרשמים. אם התוכניות משתנות, פשוט שלחו לנו וואטסאפ.</p>
+        <div class="nav-row"><button type="button" class="btn sec-btn" onclick="goStep(2)">→ חזרה</button><button type="button" class="btn" onclick="goStep(4)">ממשיכים ←</button></div>
       </fieldset>
 
-      <!-- STEP 4 — אחרי שהמקום נשמר -->
+      <!-- STEP 4 -->
       <fieldset class="step" data-step="4" hidden>
-        <legend id="savedTitle">המקום שלך שמור 💛</legend>
-        <p class="save-status" aria-live="polite"></p>
-        <p class="step-sub">עוד רגע קטן לפני שנפגשים: קצת עלינו, וכמה דברים שחשוב לדעת.</p>
+        <legend>עוד רגע נפגשים 💛</legend>
 
         <div class="framed">
           <h3>משהו שרוב המטיילים לא יודעים 🤫</h3>
@@ -527,11 +524,12 @@ footer .links{margin-top:14px;font-size:14px;color:var(--sand-deep)}
         <div id="extraAmountWrap"><label class="f" for="extraAmount">הסכום הכולל (₪) <small>למשל: 100 = ההשתתפות שלי + השתתפות עבור אורח נוסף</small></label><input type="number" id="extraAmount" min="1" inputmode="numeric"></div>
         <p class="pay-note">ההשתתפות הינה סמלית 💛 כל השתתפות מזכה בקבלה מוכרת למס (סעיף 46א׳)</p>
         <div class="pay-frame">
-          <button type="button" class="pay-cta" id="payCta" onclick="finishStep4(true)">
-            <b id="payCtaText">💛 לתשלום מאובטח — לוחצים כאן</b>
+          <button type="button" class="pay-cta" id="payCta" onclick="payAndRegister()">
+            <b>💛 מאשר/ת הגעה ועוברים לתשלום מאובטח</b>
             <span class="pay-icons"><i class="pi-card"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2.5" fill="#5C6BC0"/><rect x="2" y="8" width="20" height="3.2" fill="#3949AB"/><rect x="5" y="14" width="6" height="2" rx="1" fill="#fff"/></svg>אשראי</i><i class="pi-bit">bit</i><i class="pi-paybox"><b>P</b>PayBox</i><i class="pi-gpay"><svg viewBox="0 0 18 18" aria-hidden="true"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.33A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.97 10.72a5.4 5.4 0 0 1 0-3.44V4.95H.96a9 9 0 0 0 0 8.1l3.01-2.33z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58A9 9 0 0 0 .96 4.95l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58z"/></svg>Pay</i></span>
           </button>
           <p class="pay-strong">🔒 כל האפשרויות בדף תשלום מאובטח אחד (GROW) — הקבלה נשלחת אוטומטית למייל</p>
+          <p class="pay-hint">הלחיצה שומרת לכם את המקום ופותחת את עמוד התשלום. בלי השתתפות? סמנו "כרגע לא יכול/ה" ולחצו למטה "שמרו לי מקום".</p>
           <button type="button" class="bank-toggle" onclick="var p=document.getElementById('bankPanel');p.hidden=!p.hidden;this.setAttribute('aria-expanded',!p.hidden)" aria-expanded="false" aria-controls="bankPanel">🏦 מעדיפים העברה בנקאית? לחצו כאן</button>
           <div id="bankPanel" class="bank-panel" hidden>
             <div class="bank-lines">
@@ -545,8 +543,15 @@ footer .links{margin-top:14px;font-size:14px;color:var(--sand-deep)}
         </div>
 
         <p style="text-align:center;font-family:'Frank Ruhl Libre',serif;font-size:18.5px;color:var(--terra-dark);margin:26px 0 6px">מחכים לכם בשמחה — לשבת רוחנית מלאת חוויות ומנוחה! 💛</p>
-        <div class="nav-row" style="justify-content:center">
-          <button type="button" class="btn" id="doneBtn" onclick="finishStep4()">סיימנו, נתראה בשבת 💛</button>
+        <div class="check-row" id="f-confirm">
+          <input type="checkbox" id="confirm">
+          <label for="confirm"><b>מאשר/ת הגעה</b> — אנחנו מחכים לכם בשמחה ומכינים לפי מספר הנרשמים. אם התוכניות משתנות, פשוט שלחו לנו וואטסאפ.</label>
+        </div>
+        <p class="err" id="err-confirm" style="margin-top:4px">כדי שנשמור מקום — סמנו את אישור ההגעה</p>
+
+        <div class="nav-row">
+          <button type="button" class="btn sec-btn" onclick="goStep(3)">→ חזרה</button>
+          <button type="submit" class="btn" id="submitBtn">שמרו לי מקום 💛</button>
         </div>
       </fieldset>
     </form>
@@ -789,31 +794,12 @@ document.querySelectorAll('input[name=pay]').forEach(function(r){
 });
 
 /* ================= SUBMIT ================= */
-document.getElementById('regForm').addEventListener('submit', function(ev){
-  ev.preventDefault();
-  for (var st = 1; st <= 3; st++){ if (!validate(st)){ cur = st; goStep(st); return; } }
-
-  /* הסדר החדש: קודם שומרים מקום (כאן, בסוף שלב 3). ההשתתפות בעלויות מגיעה רק אחר כך, בשלב 4. */
-  var data = collectData();
-  data.stage = 'full'; data.clientId = regId + '-f';
-  data.pay = 'none';
-  data.amount = 0;
-  lastReg = data;
-
-  var btn = document.getElementById('submitBtn');
-  btn.disabled = true; btn.textContent = 'שומרים…';
-  sendRegistration(data, setSaveStatus);
-  document.getElementById('savedTitle').textContent = data.firstName + ', המקום שלך שמור 💛';
-  goStep(4);
-  btn.disabled = false; btn.textContent = 'שמרו לי מקום 💛';
-});
-
-/* מזהה אחד לכל ההרשמה (חלקית ← מלאה ← השתתפות): הסקריפט מעדכן את אותה שורה */
+/* מזהה אחד לכל ההרשמה (חלקית ← מלאה): הסקריפט מעדכן את אותה שורה */
 var regId = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 function collectData(){
   var sh = selectedShabbat();
   return {
-    regId: regId,                 // מזהה קבוע לכל ההרשמה — הסקריפט מעדכן לפיו את אותה שורה
+    regId: regId,
     parasha: sh ? sh.name.replace('פרשת ','') : '',
     shabbatDate: sh ? sh.date.toISOString().slice(0,10) : '',
     firstName: document.getElementById('firstName').value.trim(),
@@ -833,39 +819,53 @@ function savePartial(){
   var d = collectData(); d.stage = 'partial'; d.clientId = regId + '-p';
   sendRegistration(d);
 }
-/* שלב 4: בחירת השתתפות ← עדכון הגיליון ← מעבר לתשלום (אם נבחר) ← מסך תודה */
-function finishStep4(fromPayBtn){
-  var pay = (document.querySelector('input[name=pay]:checked')||{}).value || '';
-  if (!pay && fromPayBtn) pay = 'suggested';   // לחצו "לתשלום" בלי לבחור — הסכום המוצע
-  var n = Math.max(mealsCount(), 1), amount = 0;
+/* כפתור התשלום בשלב 4 = הרשמה מלאה (כולל אישור הגעה) ואז מעבר ל-Grow.
+   כך מי שלוחץ "לתשלום" לא יוצא מהתהליך בלי שנרשם. */
+function payAndRegister(){
+  var pay = document.querySelector('input[name=pay]:checked');
+  if (!pay || pay.value === 'none'){ document.getElementById('p1').checked = true; }   // לחצו לתשלום בלי לבחור — הסכום המוצע
+  var form = document.getElementById('regForm');
+  if (typeof form.requestSubmit === 'function') form.requestSubmit(); else document.getElementById('submitBtn').click();
+}
+document.getElementById('regForm').addEventListener('submit', function(ev){
+  ev.preventDefault();
+  for (var st = 1; st <= 4; st++){ if (!validate(st)){ cur = st; goStep(st); return; } }
+  var conf = document.getElementById('confirm').checked;
+  document.getElementById('err-confirm').style.display = conf ? 'none' : 'block';
+  if (!conf){ document.getElementById('f-confirm').scrollIntoView({ behavior:'smooth', block:'center' }); return; }
+
+  var sh = selectedShabbat();
+  var pay = (document.querySelector('input[name=pay]:checked')||{}).value || 'none';
+  var n = Math.max(mealsCount(), 1);
+  var amount = 0;
   if (pay === 'suggested') amount = n * 50;
   if (pay === 'other') amount = Number(document.getElementById('otherAmount').value) || 0;
   if (pay === 'extra') amount = Number(document.getElementById('extraAmount').value) || (n * 50 + 50);
-  var paid = (pay !== '' && pay !== 'none' && amount > 0);
 
-  var d = lastReg || collectData();
-  d.stage = 'payment'; d.pay = pay || 'none'; d.amount = paid ? amount : 0; d.clientId = regId + '-y';
-  lastReg = d;
-  if (paid) window.open(GROW_URL, '_blank');   // סינכרוני, בתוך הלחיצה — אחרת חוסם פופ-אפים
-  sendRegistration(d);
-  showThanks(d.firstName, selectedShabbat(), paid);
-}
-document.querySelectorAll('input[name=pay]').forEach(function(r){
-  r.addEventListener('change', function(){
-    var t = document.getElementById('payCtaText');
-    if (t) t.textContent = r.value === 'none' ? '💛 סיימנו — נתראה בשבת' : '💛 לתשלום מאובטח — לוחצים כאן';
-  });
+  var data = collectData();
+  data.amount = amount; data.pay = pay; data.stage = 'full'; data.clientId = regId + '-f';
+
+  var btn = document.getElementById('submitBtn');
+  btn.disabled = true; btn.textContent = 'שולחים…';
+
+  var paid = (pay !== 'none' && amount > 0);
+  if (paid) window.open(GROW_URL, '_blank');
+  /* השליחה לגיליון יוצאת מיד, לפני מסך התודה — כדי שלא תיפגע ממעבר לעמוד התשלום או לוואטסאפ */
+  lastReg = data;
+  sendRegistration(data, setSaveStatus);
+  showThanks(data.firstName, sh, paid);
+  btn.disabled = false; btn.textContent = 'שמרו לי מקום 💛';
 });
 
-/* ===== חיווי למטייל: האם ההרשמה נשמרה אצלנו (מופיע בשלב 4 ובמסך התודה) ===== */
+/* ===== חיווי למטייל: האם ההרשמה נשמרה אצלנו ===== */
 var lastReg = null;
 function setSaveStatus(state){
-  document.querySelectorAll('.save-status').forEach(function(el){
-    el.className = 'save-status' + (state === 'saved' ? ' ok' : state === 'failed' ? ' bad' : '');
-    el.textContent = state === 'sending' ? 'שומרים את ההרשמה…'
-      : state === 'saved' ? '✓ ההרשמה נשמרה אצלנו'
-      : 'לא הצלחנו לוודא שההרשמה נשמרה (כנראה בגלל קליטה). כדי שלא נפספס אתכם, חשוב לשלוח לנו את הפרטים בוואטסאפ (הם כבר מוכנים בהודעה במסך הבא)';
-  });
+  var el = document.getElementById('saveStatus');
+  if (!el) return;
+  el.className = 'save-status' + (state === 'saved' ? ' ok' : state === 'failed' ? ' bad' : '');
+  el.textContent = state === 'sending' ? 'שומרים את ההרשמה…'
+    : state === 'saved' ? '✓ ההרשמה נשמרה אצלנו'
+    : 'לא הצלחנו לוודא שההרשמה נשמרה (כנראה בגלל קליטה). כדי שלא נפספס אתכם, חשוב לשלוח לנו את הפרטים בוואטסאפ 👇 (הם כבר מוכנים בהודעה)';
 }
 /* סיכום ההרשמה בשורה אחת — נכנס להודעת הוואטסאפ, כך שהפרטים מגיעים אלינו גם אם הגיליון לא קיבל אותם */
 function regSummary(d){
@@ -897,7 +897,7 @@ function sendRegistration(data, onStatus){
   var others = readQueue().filter(function(x){ return x.clientId !== data.clientId; });
   others.push(data); writeQueue(others);
   var body = JSON.stringify(data), attempt = 0;
-  function clearQ(){ writeQueue(readQueue().filter(function(x){ return x.clientId !== data.clientId; })); }
+  function clearQ(){ writeQueue(readQueue().filter(function(x){ return x.clientId !== data.clientId && !(data.stage === 'full' && x.regId === data.regId); })); }
   function wait(ms){ return new Promise(function(r){ setTimeout(r, ms); }); }
   /* שני צינורות: (א) דרך השרת של האתר עצמו (/api/register) — עובד גם בטלפונים
      מסוננים ובדפדפנים בתוך אפליקציות שחוסמים פנייה ישירה לגוגל;
@@ -990,7 +990,6 @@ function closeModal(){
     /* הרשמה הבאה (למשל חבר מאותו טלפון) מקבלת מזהה חדש ושורה משלה */
     regId = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
     lastReg = null;
-    document.querySelectorAll('.save-status').forEach(function(el){ el.textContent=''; el.className='save-status'; });
     window.scrollTo({ top: 0, behavior: 'smooth' });
     return;
   }

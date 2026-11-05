@@ -4,8 +4,8 @@
  *
  * איך זה עובד עכשיו:
  *  • סוף שלב 2 (שם + טלפון): נוצרת שורה בסטטוס "טרם הושלם"
- *  • לחיצה על "שמרו לי מקום": אותה שורה מתעדכנת לסטטוס "נרשם/ה" עם כל הפרטים
- *  • בחירת השתתפות: אותה שורה מתעדכנת ("בחר/ה להשתתף" + סכום, או "ללא")
+ *  • "שמרו לי מקום" / "מאשר/ת הגעה ועוברים לתשלום": אותה שורה מתעדכנת
+ *    להרשמה מלאה ("בחר/ה להשתתף" + סכום, או "ללא")
  *  האתר מזהה כל מטייל במזהה ייחודי (עמודה "מזהה"), כך שאין כפילויות גם אם
  *  הטלפון שולח את אותה הרשמה פעמיים.
  *
@@ -42,8 +42,7 @@ function doPost(e) {
     var stage  = d.stage || 'full';
     var amount = Number(d.amount) || 0;
     var status = stage === 'partial' ? PARTIAL
-               : stage === 'payment' ? (amount > 0 ? 'בחר/ה להשתתף' : 'ללא')
-               : 'נרשם/ה';
+               : (amount > 0 ? 'בחר/ה להשתתף' : 'ללא');
 
     var regId = d.regId || d.clientId || '';
     var row = findRowById(sh, regId);
@@ -70,10 +69,6 @@ function doPost(e) {
       // שורה קיימת: לא דורסים שלב מתקדם בשלב מוקדם שהגיע באיחור
       var curStatus = sh.getRange(row, 14).getValue();
       if (stage === 'partial' && curStatus !== PARTIAL) return out({ ok: true, kept: true });
-      if (stage === 'full' && (curStatus === 'בחר/ה להשתתף' || curStatus === 'ללא')) {
-        values[12] = sh.getRange(row, 13).getValue();
-        values[13] = curStatus;
-      }
       values[0] = sh.getRange(row, 1).getValue() || new Date();
       sh.getRange(row, 1, 1, values.length).setValues([values]);
     } else {
@@ -188,8 +183,8 @@ function testRegistration() {
   var base = { regId: id, clientId: id, parasha: 'בדיקה', shabbatDate: '2026-11-07',
     firstName: 'ישראל', lastName: 'ישראלי', phone: '0501234567', gender: 'בן',
     guestType: 'מטייל/אורח', mealFri: true, mealSat: true, sleeping: 'yes', notes: 'הרשמת ניסיון', amount: 0 };
-  ['partial', 'full', 'payment'].forEach(function (stage) {
-    var d = JSON.parse(JSON.stringify(base)); d.stage = stage; if (stage === 'payment') d.amount = 100;
+  ['partial', 'full'].forEach(function (stage) {
+    var d = JSON.parse(JSON.stringify(base)); d.stage = stage; if (stage === 'full') d.amount = 100;
     Logger.log(stage + ': ' + doPost({ postData: { contents: JSON.stringify(d) } }).getContent());
   });
 }
