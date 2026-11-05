@@ -488,7 +488,7 @@ footer .links{margin-top:14px;font-size:14px;color:var(--sand-deep)}
 
       <!-- STEP 4 -->
       <fieldset class="step" data-step="4" hidden>
-        <legend>עוד רגע נפגשים 💛</legend>
+        <legend>שלב אחרון: עוד 30 שניות והמקום שלכם שמור 💛</legend>
 
         <div class="framed">
           <h3>משהו שרוב המטיילים לא יודעים 🤫</h3>
@@ -740,7 +740,7 @@ function goStep(n){
   document.querySelectorAll('.step').forEach(function(f){ f.hidden = (Number(f.dataset.step) !== n); });
   document.querySelectorAll('.progress i').forEach(function(el, i){ el.classList.toggle('on', i < n); });
   cur = n;
-  if (n === 4) updateSuggested();
+  if (n === 4){ updateSuggested(); updateSubmitText(); }
   document.getElementById('form').scrollIntoView({ behavior:'smooth', block:'start' });
 }
 function validate(step){
@@ -792,6 +792,13 @@ document.querySelectorAll('input[name=pay]').forEach(function(r){
     document.getElementById('extraAmountWrap').style.display = (r.value === 'extra' && r.checked) ? 'block' : 'none';
   });
 });
+
+/* כפתור הרשמה שמדבר על השבת הספציפית: "שמרו לי מקום בשבת חיי שרה" */
+function updateSubmitText(){
+  var sh = selectedShabbat(), b = document.getElementById('submitBtn');
+  if (!b) return;
+  b.textContent = (sh && sh.name !== 'שבת') ? 'שמרו לי מקום בשבת ' + sh.name.replace('פרשת ','') + ' 💛' : 'שמרו לי מקום בשבת 💛';
+}
 
 /* ================= SUBMIT ================= */
 /* מזהה אחד לכל ההרשמה (חלקית ← מלאה): הסקריפט מעדכן את אותה שורה */
@@ -854,7 +861,7 @@ document.getElementById('regForm').addEventListener('submit', function(ev){
   lastReg = data;
   sendRegistration(data, setSaveStatus);
   showThanks(data.firstName, sh, paid);
-  btn.disabled = false; btn.textContent = 'שמרו לי מקום 💛';
+  btn.disabled = false; updateSubmitText();
 });
 
 /* ===== חיווי למטייל: האם ההרשמה נשמרה אצלנו ===== */
