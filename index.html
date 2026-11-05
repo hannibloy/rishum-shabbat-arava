@@ -731,7 +731,7 @@ var cur = 1;
 function goStep(n){
   if (n > cur && !validate(cur)) return;
   /* סוף שלב 2: שם וטלפון כבר אצלנו — נשמרים בגיליון כ"טרם הושלם" (רשת ביטחון למי שנוטש באמצע) */
-  if (n === 3 && cur === 2) savePartial();
+  if (n === 3 && cur < 3) savePartial();
   document.querySelectorAll('.step').forEach(function(f){ f.hidden = (Number(f.dataset.step) !== n); });
   document.querySelectorAll('.progress i').forEach(function(el, i){ el.classList.toggle('on', i < n); });
   cur = n;
