@@ -817,12 +817,41 @@ document.getElementById('regForm').addEventListener('submit', function(ev){
 
   var paid = (pay !== 'none' && amount > 0);
   if (paid) window.open(GROW_URL, '_blank');
+  /* השליחה לגיליון יוצאת מיד, לפני מסך התודה — כדי שלא תיפגע ממעבר לעמוד התשלום או לוואטסאפ */
+  sendRegistration(data);
   showThanks(data.firstName, sh, paid);
   btn.disabled = false; btn.textContent = 'שמרו לי מקום 💛';
-  try {
-    fetch(SHEET_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain'}, body: JSON.stringify(data) }).catch(function(){});
-  } catch(e){}
 });
+
+/* ================= שליחה אמינה לגיליון =================
+   1. keepalive — הדפדפן משלים את הבקשה גם אם הדף עובר לעמוד התשלום,
+      לוואטסאפ, או נסגר (בדפדפנים בתוך אפליקציות window.open מחליף את הדף הנוכחי).
+   2. תור בזיכרון המכשיר — אם אין קליטה, ההרשמה נשמרת ונשלחת שוב
+      (3 ניסיונות, ואז בכניסה הבאה לדף). clientId מזהה כל הרשמה. */
+var QUEUE_KEY = 'bca_pending_regs';
+function readQueue(){ try { return JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]'); } catch(e){ return []; } }
+function writeQueue(q){ try { localStorage.setItem(QUEUE_KEY, JSON.stringify(q)); } catch(e){} }
+function sendRegistration(data){
+  if (!data.clientId) data.clientId = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  var others = readQueue().filter(function(x){ return x.clientId !== data.clientId; });
+  others.push(data); writeQueue(others);
+  var body = JSON.stringify(data), attempt = 0;
+  function done(){ writeQueue(readQueue().filter(function(x){ return x.clientId !== data.clientId; })); }
+  function go(){
+    attempt++;
+    var p;
+    try {
+      p = fetch(SHEET_URL, { method:'POST', mode:'no-cors', keepalive:true, headers:{'Content-Type':'text/plain'}, body: body });
+    } catch(e){ p = Promise.reject(e); }
+    return p.then(done).catch(function(){
+      if (attempt < 3) return new Promise(function(r){ setTimeout(r, 1500 * attempt); }).then(go);
+      try { if (navigator.sendBeacon && navigator.sendBeacon(SHEET_URL, new Blob([body], { type:'text/plain' }))) done(); } catch(e){}
+    });
+  }
+  return go();
+}
+/* הרשמות שלא הספיקו להישלח בפעם הקודמת — נשלחות שוב בכניסה לדף */
+document.addEventListener('DOMContentLoaded', function(){ readQueue().forEach(function(d){ sendRegistration(d); }); });
 
 /* ================= THANKS MODAL ================= */
 var modal = document.getElementById('thanksModal'), lastFocus, justSubmitted = false;
