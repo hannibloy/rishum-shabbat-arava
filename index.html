@@ -873,19 +873,26 @@ function sendRegistration(data, onStatus){
   var body = JSON.stringify(data), attempt = 0;
   function clearQ(){ writeQueue(readQueue().filter(function(x){ return x.clientId !== data.clientId; })); }
   function wait(ms){ return new Promise(function(r){ setTimeout(r, ms); }); }
+  /* שני צינורות: (א) דרך השרת של האתר עצמו (/api/register) — עובד גם בטלפונים
+     מסוננים ובדפדפנים בתוך אפליקציות שחוסמים פנייה ישירה לגוגל;
+     (ב) ישירות ל-Apps Script. מנסים לסירוגין, עד 4 ניסיונות. */
+  var viaProxy = location.protocol.indexOf('http') === 0;
   function go(){
     attempt++;
+    var useProxy = viaProxy && (attempt % 2 === 1);
     var p;
     try {
-      /* mode:cors — מאפשר לקרוא את תשובת הסקריפט ({"ok":true}) ולדעת בוודאות שנשמר */
-      p = fetch(SHEET_URL, { method:'POST', mode:'cors', keepalive:true, redirect:'follow', headers:{'Content-Type':'text/plain'}, body: body });
+      p = useProxy
+        ? fetch('/api/register', { method:'POST', keepalive:true, headers:{'Content-Type':'application/json'}, body: body })
+        /* mode:cors — מאפשר לקרוא את תשובת הסקריפט ({"ok":true}) ולדעת בוודאות שנשמר */
+        : fetch(SHEET_URL, { method:'POST', mode:'cors', keepalive:true, redirect:'follow', headers:{'Content-Type':'text/plain'}, body: body });
     } catch(e){ p = Promise.reject(e); }
     return p.then(function(r){ return r.text(); }).then(function(t){
       var j = {}; try { j = JSON.parse(t); } catch(e){}
       if (j && j.ok) { clearQ(); onStatus('saved'); return; }
       throw new Error('not-confirmed');
     }).catch(function(){
-      if (attempt < 3) return wait(1200 * attempt).then(go);
+      if (attempt < 4) return wait(800 * attempt).then(go);
       /* ניסיון אחרון בערוצים חסינים (ללא קריאת תשובה) — יוצאים גם כשהדף נסגר.
          ההרשמה נשארת בתור ותישלח שוב בכניסה הבאה לדף; הסקריפט מזהה כפילויות לפי clientId */
       try { fetch(SHEET_URL, { method:'POST', mode:'no-cors', keepalive:true, headers:{'Content-Type':'text/plain'}, body: body }).catch(function(){}); } catch(e){}
